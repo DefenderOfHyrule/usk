@@ -117,8 +117,8 @@ void put_pixel(uint32_t pixel_grb)
         sleep_us(200);
     }
     
-    uint8_t green = (pixel_grb >> 16) & 0xFF;
-    uint8_t red = (pixel_grb >> 8) & 0xFF;
+    uint8_t green = (pixel_grb >> 8) & 0xFF;
+    uint8_t red = (pixel_grb >> 16) & 0xFF;
     uint8_t blue = pixel_grb & 0xFF;
         
     pio_sm_put_blocking(pio0, 3, (green << 16) | (red << 8) | blue);
