@@ -1,8 +1,8 @@
-#define PIX_gre 0xFF9900
+#define PIX_gre 0x00FF00
 #define PIX_red 0xFF0000
 #define PIX_whi 0x111111
 
-#define PIX_b 0x00000F
+#define PIX_g 0x00FF00
 
 void put_pixel(uint32_t pixel_grb);
 

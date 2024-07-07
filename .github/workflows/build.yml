@@ -13,16 +13,16 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential
   
-      - name: Checkout rehius/usk
+      - name: Checkout DefenderOfHyrule/usk
         uses: actions/checkout@v3
         with:
-          repository: rehius/usk
+          repository: DefenderOfHyrule/usk
           path: usk
       
-      - name: Checkout rehius/busk
+      - name: Checkout DefenderOfHyrule/busk
         uses: actions/checkout@v3
         with:
-          repository: rehius/busk
+          repository: DefenderOfHyrule/busk
           path: busk
 
       - name: Checkout raspberrypi/pico-sdk

@@ -139,7 +139,7 @@ void inc_tries()
 {
     tries += 1;
     if(tries & 1)
-        put_pixel(PIX_b);
+        put_pixel(PIX_g);
     else
         put_pixel(PIX_gre);
 }
