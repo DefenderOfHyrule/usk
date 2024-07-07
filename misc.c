@@ -78,7 +78,7 @@ void halt_with_error(uint32_t err, uint32_t bits)
             if (success)
                 put_pixel(PIX_whi);
             else
-                put_pixel(PIX_yel);
+                put_pixel(PIX_red);
             sleep_ms(is_long ? LONG_TIME : success ? SHORT_TIME * 2 : SHORT_TIME);
             put_pixel(0);
             if (i != bits - 1 || j != CODE_REPEATS - 1)

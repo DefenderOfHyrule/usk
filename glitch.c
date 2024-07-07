@@ -134,14 +134,14 @@ int do_glitch(int delay, int width, int total_ms, int after_ms) {
 
 int tries = 0;
 
-// Blue pulsing implementation. 
+// Green pulsing implementation. 
 void inc_tries()
 {
     tries += 1;
     if(tries & 1)
         put_pixel(PIX_b);
     else
-        put_pixel(PIX_blu);
+        put_pixel(PIX_gre);
 }
 
 // random() for glitch offset array generation
