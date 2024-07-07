@@ -2,7 +2,7 @@
 #define PIX_red 0xFF0000
 #define PIX_whi 0x111111
 
-#define PIX_g 0x00FF00
+#define PIX_g 0x008000
 
 void put_pixel(uint32_t pixel_grb);
 
