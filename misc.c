@@ -94,13 +94,13 @@ void halt_with_error(uint32_t err, uint32_t bits)
     zzz();
 }
 
-void put_pixel(uint32_t pixel_grb)
+void put_pixel(uint32_t pixel_rgb)
 {
     static bool led_enabled = false;
     if (is_pico())
     {
         gpio_init(led_pin());
-        if (pixel_grb) {
+        if (pixel_rgb) {
             gpio_set_dir(led_pin(), true);
             gpio_put(led_pin(), 1);
         }
@@ -116,7 +116,7 @@ void put_pixel(uint32_t pixel_grb)
         gpio_put(pwr_pin(), 1);
         sleep_us(200);
     }
-    pio_sm_put_blocking(pio0, 3, pixel_grb << 8u);
+    pio_sm_put_blocking(pio0, 3, pixel_rgb << 8u);
     sleep_us(50);
     pio_sm_set_enabled(pio0, 3, false);
     gpio_init(led_pin());
