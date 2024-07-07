@@ -1,3 +1,4 @@
+#include "misc.h"
 #include "pico/stdlib.h"
 #include "hardware/pio.h"
 #include "pins.h"
@@ -5,7 +6,6 @@
 #include "hardware/vreg.h"
 #include "ws2812.pio.h"
 #include "board_detect.h"
-#include "misc.h"
 #include "board_detect.h"
 
 extern int ws_pio_offset;
@@ -152,3 +152,4 @@ void reset_cpu() {
     gpio_disable_pulls(PIN_RST);
     gpio_disable_input_output(PIN_RST);
 }
+
