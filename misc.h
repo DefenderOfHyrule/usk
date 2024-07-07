@@ -4,7 +4,7 @@
 
 #define PIX_g 0x008000
 
-void put_pixel(uint32_t pixel_rgb);
+void put_pixel(uint32_t pixel_grb);
 
 void halt_with_error(uint32_t err, uint32_t bits);
 
