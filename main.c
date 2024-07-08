@@ -34,7 +34,7 @@ void rewrite_payload()
 {
     put_pixel(PIX_whi);
     write_payload();
-    put_pixel(PIX_gre);
+    put_pixel(PIX_red);
     // used to automatically rewrite payload when eMMC/console changes
     init_config(cid_buf + 1);
 }

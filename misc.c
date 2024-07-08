@@ -1,4 +1,3 @@
-#include "misc.h"
 #include "pico/stdlib.h"
 #include "hardware/pio.h"
 #include "pins.h"
@@ -6,6 +5,7 @@
 #include "hardware/vreg.h"
 #include "ws2812.pio.h"
 #include "board_detect.h"
+#include "misc.h"
 #include "board_detect.h"
 
 extern int ws_pio_offset;
@@ -116,12 +116,7 @@ void put_pixel(uint32_t pixel_grb)
         gpio_put(pwr_pin(), 1);
         sleep_us(200);
     }
-    
-    uint8_t green = (pixel_grb >> 8) & 0xFF;
-    uint8_t red = (pixel_grb >> 16) & 0xFF;
-    uint8_t blue = pixel_grb & 0xFF;
-        
-    pio_sm_put_blocking(pio0, 3, (green << 16) | (red << 8) | blue);
+    pio_sm_put_blocking(pio0, 3, pixel_grb << 8u);
     sleep_us(50);
     pio_sm_set_enabled(pio0, 3, false);
     gpio_init(led_pin());
@@ -152,4 +147,3 @@ void reset_cpu() {
     gpio_disable_pulls(PIN_RST);
     gpio_disable_input_output(PIN_RST);
 }
-
