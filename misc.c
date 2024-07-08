@@ -100,7 +100,7 @@ void put_pixel(uint32_t pixel_rgb)
     if (is_pico())
     {
         gpio_init(led_pin());
-        if (pixel_grb) {
+        if (pixel_rgb) {
             gpio_set_dir(led_pin(), true);
             gpio_put(led_pin(), 1);
         }
