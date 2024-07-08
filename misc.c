@@ -94,7 +94,7 @@ void halt_with_error(uint32_t err, uint32_t bits)
     zzz();
 }
 
-void put_pixel(uint32_t pixel_grb)
+void put_pixel(uint32_t pixel_rgb)
 {
     static bool led_enabled = false;
     if (is_pico())
@@ -106,6 +106,12 @@ void put_pixel(uint32_t pixel_grb)
         }
         return;
     }
+    
+    uint8_t red = (pixel_rgb >> 16) & 0xFF;
+    uint8_t green = (pixel_rgb >> 8) & 0xFF;
+    uint8_t blue = pixel_rgb & 0xFF;
+    uint32_t pixel_grb = (green << 16) | (red << 8) | blue;
+    
     ws2812_program_init(pio0, 3, ws_pio_offset, led_pin(), 800000, true);
     if (!led_enabled && pwr_pin() != 31)
     {
