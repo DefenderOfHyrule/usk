@@ -34,7 +34,7 @@ void rewrite_payload()
 {
     put_pixel(PIX_whi);
     write_payload();
-    put_pixel(PIX_red);
+    put_pixel(PIX_gre);
     // used to automatically rewrite payload when eMMC/console changes
     init_config(cid_buf + 1);
 }
@@ -102,7 +102,7 @@ int main()
     // is chip reset required
     bool force_button = detect_by_pull_up(1, 0);
     // start LED
-    put_pixel(PIX_gre);
+    put_pixel(PIX_red);
     // test pins
     self_test();
     // wait till the CPU has proper power & started reading the eMMC

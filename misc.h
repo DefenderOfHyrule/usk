@@ -1,6 +1,6 @@
-#define PIX_gre 0x00FF00
-#define PIX_red 0xFF0000
-#define PIX_whi 0x111111
+#define PIX_gre 0x32ae00
+#define PIX_red 0xc90000
+#define PIX_whi 0xffffff
 
 #define PIX_g 0x008000
 
