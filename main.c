@@ -106,7 +106,7 @@ int main()
     // test pins
     self_test();
     // wait till the CPU has proper power & started reading the eMMC
-    wait_for_boot(2500);
+    wait_for_boot(2475);
     // ensure the BCT has not been overwritten by system update
     bool force_check = fast_check();
     was_self_reset = force_button || !is_configured(cid_buf + 1);
