@@ -45,8 +45,8 @@ jobs:
       - name: Build busk
         run: | 
           # Backup and modify memmap_default.ld for busk build
-          cp $GITHUB_WORKSPACE/pico-sdk/src/rp2_common/pico_standard_link/memmap_default.ld $GITHUB_WORKSPACE/pico-sdk/src/rp2_common/pico_standard_link/memmap_default.ld.bak
-          sed -i 's/RAM(rwx) : ORIGIN =  0x20000000, LENGTH = 256k/RAM(rwx) : ORIGIN = 0x20038000, LENGTH = 32k/g' $GITHUB_WORKSPACE/pico-sdk/src/rp2_common/pico_standard_link/memmap_default.ld
+          cp $GITHUB_WORKSPACE/pico-sdk/src/rp2_common/pico_crt0/rp2040/memmap_default.ld $GITHUB_WORKSPACE/pico-sdk/src/rp2_common/pico_crt0/rp2040/memmap_default.ld.bak
+          sed -i 's/RAM(rwx) : ORIGIN =  0x20000000, LENGTH = 256k/RAM(rwx) : ORIGIN = 0x20038000, LENGTH = 32k/g' $GITHUB_WORKSPACE/pico-sdk/src/rp2_common/pico_crt0/rp2040/memmap_default.ld
           mkdir -p $GITHUB_WORKSPACE/build/busk
           cd $GITHUB_WORKSPACE/build/busk
           cmake $GITHUB_WORKSPACE/busk
@@ -54,8 +54,8 @@ jobs:
           make clean
           cd $GITHUB_WORKSPACE
           # Restore original memmap_default.ld from backup
-          rm -f $GITHUB_WORKSPACE/pico-sdk/src/rp2_common/pico_standard_link/memmap_default.ld
-          mv $GITHUB_WORKSPACE/pico-sdk/src/rp2_common/pico_standard_link/memmap_default.ld.bak $GITHUB_WORKSPACE/pico-sdk/src/rp2_common/pico_standard_link/memmap_default.ld
+          rm -f $GITHUB_WORKSPACE/pico-sdk/src/rp2_common/pico_crt0/rp2040/memmap_default.ld
+          mv $GITHUB_WORKSPACE/pico-sdk/src/rp2_common/pico_crt0/rp2040/memmap_default.ld.bak $GITHUB_WORKSPACE/pico-sdk/src/rp2_common/pico_crt0/rp2040/memmap_default.ld
       
       - name: Build usk
         run: | 

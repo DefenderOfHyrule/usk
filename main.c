@@ -94,13 +94,20 @@ int main()
     init_fuses();
     // LED & glitch & emmc PIO
     upload_pio();
+    if (is_tiny())
+    {
+        gpio_put(led_pin(), 0);
+        sleep_us(100);
+        put_pixel(0);
+        sleep_us(100);
+    }
     // check if this is the very first start
     if (watchdog_caused_reboot() && boot_try == 0)
 	{
 		halt_with_error(1, 1);
 	}
     // is chip reset required
-    bool force_button = detect_by_pull_up(1, 0);
+    bool force_button = detect_by_pull(1, 0, 1);
     // start LED
     put_pixel(PIX_gre);
     // test pins

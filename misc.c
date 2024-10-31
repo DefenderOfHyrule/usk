@@ -52,7 +52,10 @@ void finish_pins_except_leds() {
 }
 
 void finish_pins_leds() {
-    gpio_disable_input_output(led_pin());
+    if (!is_tiny())
+    {
+        gpio_disable_input_output(led_pin());
+    }
     gpio_disable_input_output(pwr_pin());
 }
 
@@ -125,7 +128,10 @@ void put_pixel(uint32_t pixel_rgb)
     pio_sm_put_blocking(pio0, 3, pixel_grb << 8u);
     sleep_us(50);
     pio_sm_set_enabled(pio0, 3, false);
-    gpio_init(led_pin());
+    if (!is_tiny())
+    {
+        gpio_init(led_pin());
+    }
 }
 
 void gpio_disable_input_output(int pin)

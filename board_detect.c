@@ -14,12 +14,13 @@ enum board_type {
     BOARD_XO,
     BOARD_IB,
     BOARD_PI,
-    BOARD_SQ
+    BOARD_SQ,
+    BOARD_WT
 };
 
 enum board_type cur_board = BOARD_WS;
 
-bool detect_by_pull_up(int frc_pin, int det_pin)
+bool detect_by_pull(int frc_pin, int det_pin, bool up)
 {
     bool result = false;
     if (frc_pin >= 0)
@@ -27,9 +28,9 @@ bool detect_by_pull_up(int frc_pin, int det_pin)
     gpio_init(det_pin);
     if (frc_pin >= 0)
         gpio_set_dir(frc_pin, true);
-    gpio_pull_up(det_pin);
+    gpio_set_pulls(det_pin, up, !up);
     sleep_us(15);
-    result = !gpio_get(det_pin);
+    result = gpio_get(det_pin) ^ up;
     gpio_deinit(det_pin);
     if (frc_pin >= 0)
         gpio_deinit(frc_pin);
@@ -39,27 +40,32 @@ bool detect_by_pull_up(int frc_pin, int det_pin)
 
 bool test_xiao()
 {
-    return detect_by_pull_up(1, 2);
+    return detect_by_pull(1, 2, 1);
 }
 
 bool test_itsy()
 {
-    return detect_by_pull_up(3, 2);
+    return detect_by_pull(3, 2, 1);
 }
 
 bool test_pico()
 {
-    return detect_by_pull_up(-1, 22);
+    return detect_by_pull(-1, 22, 1);
 }
 
 bool test_ws()
 {
-    return detect_by_pull_up(-1, 25);
+    return detect_by_pull(-1, 25, 1);
+}
+
+bool test_wt()
+{
+    return detect_by_pull(-1, 16, 0);
 }
 
 bool test_sqc()
 {
-    return detect_by_pull_up(-1, 17);
+    return detect_by_pull(-1, 17, 1);
 }
 
 void detect_board()
@@ -79,6 +85,8 @@ void detect_board()
         cur_board = BOARD_PI;
     } else if (test_sqc()) {
         cur_board = BOARD_SQ;
+    } else if (test_wt()) {
+        cur_board = BOARD_WT;
     } else {
         cur_board = BOARD_WS;
     }
@@ -95,7 +103,7 @@ int led_pin()
             return PIN_LED_ITSY;
         default:
             return PIN_LED_WS;
-    }; 
+    };
 }
 
 int pwr_pin()
@@ -107,7 +115,7 @@ int pwr_pin()
             return PIN_LED_PWR_ITSY;
         default:
             return 31;
-    }; 
+    };
 }
 
 int scl_pin()
@@ -123,7 +131,7 @@ int scl_pin()
             return PIN_SCL_SQC;
         default:
             return PIN_SCL_WS;
-    }; 
+    };
 }
 
 int sda_pin()
@@ -139,7 +147,7 @@ int sda_pin()
             return PIN_SDA_SQC;
         default:
             return PIN_SDA_WS;
-    }; 
+    };
 }
 
 int gli_pin()
@@ -153,10 +161,15 @@ int gli_pin()
             return PIN_GLI_PICO;
         default:
             return PIN_GLI_WS;
-    }; 
+    };
 }
 
 bool is_pico()
 {
     return cur_board == BOARD_PI;
+}
+
+bool is_tiny()
+{
+    return cur_board == BOARD_WT;
 }
