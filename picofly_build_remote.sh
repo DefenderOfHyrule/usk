@@ -7,14 +7,43 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # no color
 
-echo -e "${GREEN}=== Picofly build script for EndeavourOS ===${NC}\n"
+echo -e "${GREEN}=== Picofly build script (multi-distro) ===${NC}\n"
+
+# detect distribution
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    DISTRO=$ID
+else
+    echo -e "${RED}Error: Cannot detect distribution${NC}"
+    exit 1
+fi
 
 # step 1: install dependencies
-echo -e "${YELLOW}[1/8] Installing dependencies...${NC}"
-sudo pacman -S --needed arm-none-eabi-gcc arm-none-eabi-newlib cmake make python git
+echo -e "${YELLOW}[1/8] Installing dependencies for $DISTRO...${NC}"
+
+case $DISTRO in
+    arch|endeavouros|manjaro)
+        sudo pacman -S --needed arm-none-eabi-gcc arm-none-eabi-newlib cmake make python git
+        ;;
+    fedora)
+        sudo dnf install -y arm-none-eabi-gcc-cs arm-none-eabi-gcc-cs-c++ arm-none-eabi-newlib cmake make python3 git gcc-c++
+        ;;
+    ubuntu|debian|pop|linuxmint)
+        sudo apt update
+        sudo apt install -y gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential cmake make python3 git
+        ;;
+    *)
+        echo -e "${RED}Error: Unsupported distribution: $DISTRO${NC}"
+        echo "Please install the following packages manually:"
+        echo "  - ARM embedded GCC toolchain (arm-none-eabi-gcc)"
+        echo "  - newlib for ARM (arm-none-eabi-newlib)"
+        echo "  - cmake, make, python3, git"
+        exit 1
+        ;;
+esac
 
 # step 2: create workspace directory
-WORKSPACE="$HOME/Picofly-build"
+WORKSPACE="$HOME/Picofly-build-remote"
 echo -e "${YELLOW}[2/8] Creating workspace at $WORKSPACE...${NC}"
 mkdir -p "$WORKSPACE"
 cd "$WORKSPACE"
@@ -67,12 +96,9 @@ cd "$WORKSPACE/build/busk"
 cmake "$WORKSPACE/busk"
 make
 
-# prepare.py will look for ../busk/busk.bin from build/usk, which is build/busk/busk.bin
-
 # restore original memmap_default.ld
 rm -f "$MEMMAP_PATH"
 mv "$MEMMAP_PATH.bak" "$MEMMAP_PATH"
-
 cd "$WORKSPACE"
 
 # step 8: build usk
@@ -101,5 +127,4 @@ echo -e "  - update.bin:   ${WORKSPACE}/build/usk/update.bin"
 USK_VERSION_LO=$(sed -n 's/#define VER_LO \([0-9]*\)/\1/p' "$WORKSPACE/usk/config.h")
 USK_VERSION_HI=$(sed -n 's/#define VER_HI \([0-9]*\)/\1/p' "$WORKSPACE/usk/config.h")
 USK_VERSION="${USK_VERSION_HI}.${USK_VERSION_LO}"
-
 echo -e "${GREEN}Version: Picofly ${USK_VERSION}${NC}\n"

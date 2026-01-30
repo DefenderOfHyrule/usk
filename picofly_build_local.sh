@@ -7,7 +7,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${GREEN}=== Picofly build script for EndeavourOS ===${NC}\n"
+echo -e "${GREEN}=== Picofly build script (multi-distro) ===${NC}\n"
 
 # check if we're in the usk directory
 if [ ! -f "config.h" ] || [ ! -d ".git" ]; then
@@ -16,15 +16,43 @@ if [ ! -f "config.h" ] || [ ! -d ".git" ]; then
     exit 1
 fi
 
+# detect distribution
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    DISTRO=$ID
+else
+    echo -e "${RED}Error: Cannot detect distribution${NC}"
+    exit 1
+fi
+
 # step 1: install dependencies
-echo -e "${YELLOW}[1/7] Installing dependencies...${NC}"
-sudo pacman -S --needed arm-none-eabi-gcc arm-none-eabi-newlib cmake make python git
+echo -e "${YELLOW}[1/7] Installing dependencies for $DISTRO...${NC}"
 
-# set workspace as parent directory of usk
-WORKSPACE="$(cd .. && pwd)"
-USK_DIR="$WORKSPACE/usk"
+case $DISTRO in
+    arch|endeavouros|manjaro)
+        sudo pacman -S --needed arm-none-eabi-gcc arm-none-eabi-newlib cmake make python git
+        ;;
+    fedora)
+        sudo dnf install -y arm-none-eabi-gcc-cs arm-none-eabi-gcc-cs-c++ arm-none-eabi-newlib cmake make python3 git gcc-c++
+        ;;
+    ubuntu|debian|pop|linuxmint)
+        sudo apt update
+        sudo apt install -y gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential cmake make python3 git
+        ;;
+    *)
+        echo -e "${RED}Error: Unsupported distribution: $DISTRO${NC}"
+        echo "Please install the following packages manually:"
+        echo "  - ARM embedded GCC toolchain (arm-none-eabi-gcc)"
+        echo "  - newlib for ARM (arm-none-eabi-newlib)"
+        echo "  - cmake, make, python3, git"
+        exit 1
+        ;;
+esac
 
-echo -e "${YELLOW}[2/7] Using workspace: $WORKSPACE${NC}"
+# set workspace as build directory inside usk
+WORKSPACE="$(pwd)/Picofly-build-local"
+echo -e "${YELLOW}[2/7] Creating workspace at $WORKSPACE...${NC}"
+mkdir -p "$WORKSPACE"
 
 # step 2: clone sibling repositories
 echo -e "${YELLOW}[3/7] Cloning sibling repositories...${NC}"
@@ -48,11 +76,12 @@ export PICO_SDK_PATH="$WORKSPACE/pico-sdk"
 
 # step 4: create symbolic links
 echo -e "${YELLOW}[5/7] Creating symbolic links...${NC}"
+USK_DIR="$(dirname "$WORKSPACE")"
 ln -sf "$PICO_SDK_PATH/external/pico_sdk_import.cmake" "$WORKSPACE/busk/pico_sdk_import.cmake"
-ln -sf "$PICO_SDK_PATH/external/pico_sdk_import.cmake" "$WORKSPACE/usk/pico_sdk_import.cmake"
+ln -sf "$PICO_SDK_PATH/external/pico_sdk_import.cmake" "$USK_DIR/pico_sdk_import.cmake"
 
 # step 5: create generated directory
-mkdir -p "$WORKSPACE/usk/generated"
+mkdir -p "$USK_DIR/generated"
 
 # step 6: build busk
 echo -e "${YELLOW}[6/7] Building busk...${NC}"
@@ -68,23 +97,20 @@ cd "$WORKSPACE/build/busk"
 cmake "$WORKSPACE/busk"
 make
 
-# prepare.py will look for ../busk/busk.bin from build/usk, which is build/busk/busk.bin
-
 # restore original memmap_default.ld
 rm -f "$MEMMAP_PATH"
 mv "$MEMMAP_PATH.bak" "$MEMMAP_PATH"
-
 cd "$WORKSPACE"
 
 # step 7: build usk
 echo -e "${YELLOW}[7/7] Building usk...${NC}"
 mkdir -p "$WORKSPACE/build/usk"
 cd "$WORKSPACE/build/usk"
-cmake "$WORKSPACE/usk"
+cmake "$USK_DIR"
 make
 
 # prepare.py looks for ../busk/busk.bin relative to build/usk
-python3 "$WORKSPACE/usk/prepare.py"
+python3 "$USK_DIR/prepare.py"
 
 # clean up both builds
 cd "$WORKSPACE/build/busk"
@@ -99,8 +125,7 @@ echo -e "  - firmware.uf2: ${WORKSPACE}/build/usk/firmware.uf2"
 echo -e "  - update.bin:   ${WORKSPACE}/build/usk/update.bin"
 
 # get version info
-USK_VERSION_LO=$(sed -n 's/#define VER_LO \([0-9]*\)/\1/p' "$WORKSPACE/usk/config.h")
-USK_VERSION_HI=$(sed -n 's/#define VER_HI \([0-9]*\)/\1/p' "$WORKSPACE/usk/config.h")
+USK_VERSION_LO=$(sed -n 's/#define VER_LO \([0-9]*\)/\1/p' "$USK_DIR/config.h")
+USK_VERSION_HI=$(sed -n 's/#define VER_HI \([0-9]*\)/\1/p' "$USK_DIR/config.h")
 USK_VERSION="${USK_VERSION_HI}.${USK_VERSION_LO}"
-
 echo -e "${GREEN}Version: Picofly ${USK_VERSION}${NC}\n"

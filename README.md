@@ -79,10 +79,12 @@ Since Picofly firmware version `2.80`, the LED colors indicate the following mod
 I've written two scripts that make compiling μsk easier, these scripts can be found in the root of the repository.
 A short explanation about what they do:
 
-* `picofly_build_local.sh` is a script that is ran from within the *root* of the cloned repository. You clone the repository, `cd` into the repository and run the script with `bash picofly_build_local.sh`. The script has a preconfigured workspace (`$WORKSPACE`) that clones the busk and pico-sdk repositories to the directory containing the cloned μsk repository, which is also where it'll create the `build` folder. This script is used to test and/or compile local changes made to μsk's code.
-* `picofly_build_remote.sh` is a script that can be ran from whichever directory you'd like. This script (despite the possibly confusing name) does something similar to the previous script except that it clones the μsk, busk and pico-sdk repositories to `$WORKSPACE` (in this instance, this is `$HOME/Picofly-build`, but can be changed to whichever directory you'd like) automatically. This script can be used in the situation where you just want to have a quick way of cloning all relevant repositories and build the μsk firmware for yourself.
+* `picofly_build_local.sh` is a script that is ran from within the *root* of the cloned repository. You clone the repository, `cd` into the repository and run the script with `bash picofly_build_local.sh`. The script has a preconfigured workspace (`$(pwd)/Picofly-build-local`) that clones the busk and pico-sdk repositories to the `Picofly-build-local`folder that's created in the root of the cloned μsk repository. This script is used to test and/or compile local changes made to μsk's code.
+* `picofly_build_remote.sh` is a script that can be ran from whichever directory you'd like. This script (despite the possibly confusing name) does something similar to the previous script except that it clones the μsk, busk and pico-sdk repositories to `$HOME/Picofly-build-remote` (can be changed to whichever directory you'd like) automatically. This script can be ran with `bash picofly_build_remote.sh` from any location on your PC and can be used in the situation where you just want to have a quick way of cloning all relevant repositories and build the μsk firmware for yourself.
 
-Please do note that, at the moment (16-01-2026), these scripts only work on Arch based Linux distributions (mainly EndeavourOS, as that's what I personally use). I'll add support for Fedora and Ubuntu/Debian based distro's in the future, but this is still WIP.
+The resulting `firmware.uf2` and `update.bin` will be stored in `WORKSPACE/build/usk` for each script.
+
+These scripts are now (as of 30-01-2026) compatible with all "mainstream" linux distributions :). If you face any issues, please report them in the issues tab.
 
 ## Modchip installation guide
 
