@@ -81,7 +81,7 @@ extern bool mariko;
 
 static inline uint16_t crc_itu_t_byte(uint16_t crc, const uint8_t data)
 {
-	return (crc << 8) ^ crc_itu_t_table[((crc >> 8) ^ data) & 0xff];
+    return (crc << 8) ^ crc_itu_t_table[((crc >> 8) ^ data) & 0xff];
 }
 
 uint16_t crc_itu_t(uint16_t crc, const uint8_t *buffer, size_t len)
@@ -91,9 +91,9 @@ uint16_t crc_itu_t(uint16_t crc, const uint8_t *buffer, size_t len)
     {
         crc_prepare_table();
     }
-	while (len--)
-		crc = crc_itu_t_byte(crc, *buffer++);
-	return crc;
+    while (len--)
+        crc = crc_itu_t_byte(crc, *buffer++);
+    return crc;
 }
 
 extern void zzz();
@@ -108,18 +108,18 @@ uint16_t payload_crc()
 
 int crc7(uint8_t *buffer, int size)
 {
-	uint8_t crc = 0;
-	for (int i = 0; i < size; i++) {
-		uint8_t c = buffer[i];
-		for (int j = 0; j < 8; j++) {
-			crc <<= 1;
-			if ((crc ^ c) & 0x80)
-				crc ^= 9;
-			c <<= 1;
-		}
-		crc &= 0x7Fu;
-	}
-	return crc;
+    uint8_t crc = 0;
+    for (int i = 0; i < size; i++) {
+        uint8_t c = buffer[i];
+        for (int j = 0; j < 8; j++) {
+            crc <<= 1;
+            if ((crc ^ c) & 0x80)
+                crc ^= 9;
+            c <<= 1;
+        }
+        crc &= 0x7Fu;
+    }
+    return crc;
 }
 
 void __time_critical_func(cmd_write)(uint8_t cmd, uint32_t argument)
@@ -130,9 +130,9 @@ void __time_critical_func(cmd_write)(uint8_t cmd, uint32_t argument)
     pio_sm_set_out_pins(pio0, SM_OUT, PIN_CMD, 1);
     pio_sm_set_enabled(pio0, SM_OUT, true);
 
-	data[0] = cmd | 0x40;
-	*(uint32_t *) &data[1] = __builtin_bswap32(argument);
-	data[5] = (crc7(data, 5) << 1) | 1;
+    data[0] = cmd | 0x40;
+    *(uint32_t *) &data[1] = __builtin_bswap32(argument);
+    data[5] = (crc7(data, 5) << 1) | 1;
     uint32_t fifo[3];
     fifo[0] = 0xFFCF0000 | (data[0] << 8) | data[1];
     fifo[1] = __builtin_bswap32(*(uint32_t*)(data + 2));
@@ -151,7 +151,7 @@ bool __time_critical_func(dat_write)()
     pio_sm_set_out_pins(pio0, SM_OUT, PIN_DAT, 1);
     pio_sm_set_enabled(pio0, SM_OUT, true);
     uint8_t * buffer = data_buf;
-	uint16_t crc = crc_itu_t(0, buffer, 512);
+    uint16_t crc = crc_itu_t(0, buffer, 512);
     uint32_t words[130];
     int size_bits = 514 * 8 + 2;
     words[0] = ((size_bits ^ 0xFFFF) << 16) | (buffer[0] << 7) | (buffer[1] >> 1);
@@ -413,13 +413,13 @@ uint32_t mmc_init_table[] = {
 };
 
 bool mmc_initialize() {
-	if (!init_op_cond()) {
+    if (!init_op_cond()) {
         return false;
     }
     if (!cmd_exec_cid()) {
         return false;
     }
-	for (int i = 0; i < sizeof(mmc_init_table)/sizeof(mmc_init_table[0]); i += 4)
+    for (int i = 0; i < sizeof(mmc_init_table)/sizeof(mmc_init_table[0]); i += 4)
     {
         uint32_t res= 0;
         if (!simple_cmd_exec_with_ret(mmc_init_table[i], mmc_init_table[i+1], &res)) {
@@ -495,9 +495,9 @@ extern int boot_slot;
 uint8_t temp_buf[512];
 
 struct fw_header {
-	uint32_t size;
-	uint32_t crc;
-	uint8_t data[];
+    uint32_t size;
+    uint32_t crc;
+    uint8_t data[];
 };
 
 #define fw_slot_0 ((struct fw_header *) (XIP_BASE + 0x10000))
@@ -708,6 +708,69 @@ void prepare_mariko_bct()
     memcpy(data_bct + 0x480, mariko_bct_data, 0x2380);
 }
 
+/*
+ * Atmosphere's fs_mitm (fsmitm_boot0storage.cpp) intercepts all BOOT0 writes and
+ * drops writes to BctNormalMain (offset 0x0000) and BctSafeMain (offset 0x4000)
+ * when it detects the modchip's custom public key fill pattern (0x59, 0x69...) in those
+ * slots. this is by design for AutoRCM preservation, but it means that after a firmware
+ * update via syscfw, UpdateBootImages successfully writes the new BCT to BctNormalSub (0x8000) and BctSafeSub (0xC000), 
+ * but the writes to BctNormalMain and BctSafeMain are discarded. the result is that Main slots still hold the modchip
+ * synthetic/fake BCT while Sub slots have the new firmware's real BCT.
+ *
+ * when hekate subsequently tries to launch OFW it reads BctNormalMain, which still points
+ * to the payload area (block 0x1F80) instead of the real pkg1, so OFW fails to boot.
+ *
+ * this function detects that diverged state and resyncs by copying Sub > Main for both
+ * Normal and Safe BCT pairs, restoring them to a consistent state before we overwrite
+ * Main with the synthetic/fake BCT again on this boot.
+ *
+ * detection: read block+1 of each BCT (BCT byte offset 0x220) and compare against the
+ * modchip magic values:
+ *   erista: 0x69696969 (pubkey fill area spans BCT bytes 0x211-0x30E, 0x220 is within)
+ *   mariko: 0xA56CA203 (first 4 bytes of mariko_bct_sign placed at BCT offset 0x220)
+ *
+ * BOOT0 block layout (512-byte blocks):
+ *   BctNormalMain:  0x000-0x01F  (BOOT0 byte offset 0x0000, BCT block 0 = BOOT0 block 0x000)
+ *   BctSafeMain:    0x020-0x03F  (BOOT0 byte offset 0x4000, BCT block 0 = BOOT0 block 0x020)
+ *   BctNormalSub:   0x040-0x05F  (BOOT0 byte offset 0x8000, BCT block 0 = BOOT0 block 0x040)
+ *   BctSafeSub:     0x060-0x07F  (BOOT0 byte offset 0xC000, BCT block 0 = BOOT0 block 0x060)
+ *
+ * magic is at BCT byte 0x220 = block-relative offset 0x20 within BCT block 1.
+ * so we read BOOT0 block (bct_start + 1) and check data_buf[0x20].
+ */
+static bool bct_block_has_modchip_magic(int bct_start_block) {
+    if (!cmd_mmc_read(bct_start_block + 1) && !cmd_mmc_read(bct_start_block + 1))
+        return false; // read failure; assume no magic, don't resync
+    uint32_t magic = *(uint32_t *)(data_buf + 0x20);
+    return magic == (mariko ? 0xA56CA203 : 0x69696969);
+}
+
+void check_and_resync_bct() {
+    // only relevant on a configured boot where space_bl magic is already present,
+    // meaning write_payload has previously run and wrote the synthetic/fake BCT.
+    // if the chip is not yet configured there is nothing to resync.
+    if (!is_space_bl)
+        return;
+
+    // check Normal BCT pair; Main has magic, Sub does not > Sub has a newer Nintendo BCT
+    bool normal_main_magic = bct_block_has_modchip_magic(0x000);
+    bool normal_sub_magic  = bct_block_has_modchip_magic(0x040);
+
+    if (normal_main_magic && !normal_sub_magic) {
+        // BctNormalSub was updated by a firmware update but BctNormalMain write was
+        // dropped by Atmosphere. copy Sub > Main to resync.
+        copy_bct(0x040, 0x000);
+    }
+
+    // check Safe BCT pair; uses same logic
+    bool safe_main_magic = bct_block_has_modchip_magic(0x020);
+    bool safe_sub_magic  = bct_block_has_modchip_magic(0x060);
+
+    if (safe_main_magic && !safe_sub_magic) {
+        copy_bct(0x060, 0x020);
+    }
+}
+
 void write_payload() {
     static bool prepared = false;
     if (!prepared)
@@ -720,6 +783,10 @@ void write_payload() {
     }
     start_mmc();
     reinit_mmc();
+    // resync BctNormalMain/BctSafeMain from their Sub counterparts if Atmosphere's
+    // fs_mitm has silently dropped writes to Main during a syscfw firmware update.
+    // *has to* run before copy_bct backs up Main, so the backup captures the correct state.
+    check_and_resync_bct();
     if (!is_space_bl && !is_command)
     {
         copy_bct(0x0, 0x7A0);

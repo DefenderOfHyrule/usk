@@ -65,7 +65,9 @@ void init_glitch_pio() {
 }
 
 void deinit_glitch_pio() {
-    pio_set_sm_mask_enabled(pio1, 0x3, false);
+    // original code only disabled SM 0 and 1 (mask 0x3 = 0b011)
+    // SM 2 (G_DAT0_SM) is also used, so all 3 (mask 0x7 = 0b111) need to be disabled
+    pio_set_sm_mask_enabled(pio1, 0x7, false);
     for (int i = PIN_CLK; i <= PIN_DAT; i++)
     {
             gpio_deinit(i);
