@@ -70,7 +70,8 @@ bool wait_for_boot(int timeout_ms) {
         
         // properly clean up all state machines before retrying
         // original deinit only disabled SM 0 and 1, but SM 2 (G_DAT0_SM) was left running
-        pio_set_sm_mask_enabled(pio1, 0x7, false); // Disable SM 0, 1, AND 2 (0x7 = 0b111)
+
+        pio_set_sm_mask_enabled(pio1, 0x7, false); // disable SM 0, 1, AND 2 (0x7 = 0b111)
         
         // clean up GPIO pins
         for (int i = PIN_CLK; i <= PIN_DAT; i++)
