@@ -21,9 +21,9 @@
 
 bool write_payload();
 
-// optimized: increased voltage for better stability at higher clock
+// RP2040 rating is 200MHz at 1.15v
 void init_system() {
-    vreg_set_voltage(VREG_VOLTAGE_1_30);
+    vreg_set_voltage(VREG_VOLTAGE_1_15);
     set_sys_clock_khz(200000, true);
 }
 
