@@ -103,7 +103,7 @@ int led_pin()
             return PIN_LED_ITSY;
         default:
             return PIN_LED_WS;
-    };
+    }; 
 }
 
 int pwr_pin()
@@ -115,7 +115,7 @@ int pwr_pin()
             return PIN_LED_PWR_ITSY;
         default:
             return 31;
-    };
+    }; 
 }
 
 int scl_pin()
@@ -131,7 +131,7 @@ int scl_pin()
             return PIN_SCL_SQC;
         default:
             return PIN_SCL_WS;
-    };
+    }; 
 }
 
 int sda_pin()
@@ -147,7 +147,7 @@ int sda_pin()
             return PIN_SDA_SQC;
         default:
             return PIN_SDA_WS;
-    };
+    }; 
 }
 
 int gli_pin()
@@ -161,7 +161,7 @@ int gli_pin()
             return PIN_GLI_PICO;
         default:
             return PIN_GLI_WS;
-    };
+    }; 
 }
 
 bool is_pico()

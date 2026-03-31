@@ -53,7 +53,7 @@ bool wait_for_boot(int timeout_ms) {
                 else if (last_word == 0x51000000 && word == 0x0055) //read block 0
                 {
                     // OLED models sometimes need more time between block 0 and block 1
-                    // original was 100ms, increased to 250ms for (hopefully) better OLED compatibility
+                    // original was 100ms, increased to 250ms for better OLED compatibility
                     tio_full = make_timeout_time_ms(250);
                     was_read_zero = true;
                 } else if (was_read_zero && last_word == 0x4D000200 && word == 0x00B1) // read status - erista only
@@ -67,12 +67,11 @@ bool wait_for_boot(int timeout_ms) {
                 last_word = word;
             }
         }
-        
-        // properly clean up all state machines before retrying
-        // original deinit only disabled SM 0 and 1, but SM 2 (G_DAT0_SM) was left running
 
-        pio_set_sm_mask_enabled(pio1, 0x7, false); // disable SM 0, 1, AND 2 (0x7 = 0b111)
-        
+        // properly clean up all state machines before retrying
+        // SM 2 (G_DAT0_SM) must also be disabled (0x7 = 0b111 covers SM 0, 1, and 2)
+        pio_set_sm_mask_enabled(pio1, 0x7, false);
+
         // clean up GPIO pins
         for (int i = PIN_CLK; i <= PIN_DAT; i++)
         {
@@ -81,7 +80,7 @@ bool wait_for_boot(int timeout_ms) {
             gpio_disable_input_output(i);
         }
         gpio_deinit(gli_pin());
-        
+
         // only halt with error if all retries are exhausted
         if (retry == BOOT_DETECT_MAX_RETRIES - 1) {
             if (was_read_zero) {
@@ -93,10 +92,10 @@ bool wait_for_boot(int timeout_ms) {
                 halt_with_error(3, 3);
             }
         }
-        
+
         // small delay before retrying to let hardware settle
         sleep_ms(50);
     }
-    
+
     return false;
 }

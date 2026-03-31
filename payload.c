@@ -81,7 +81,7 @@ extern bool mariko;
 
 static inline uint16_t crc_itu_t_byte(uint16_t crc, const uint8_t data)
 {
-    return (crc << 8) ^ crc_itu_t_table[((crc >> 8) ^ data) & 0xff];
+	return (crc << 8) ^ crc_itu_t_table[((crc >> 8) ^ data) & 0xff];
 }
 
 uint16_t crc_itu_t(uint16_t crc, const uint8_t *buffer, size_t len)
@@ -91,9 +91,9 @@ uint16_t crc_itu_t(uint16_t crc, const uint8_t *buffer, size_t len)
     {
         crc_prepare_table();
     }
-    while (len--)
-        crc = crc_itu_t_byte(crc, *buffer++);
-    return crc;
+	while (len--)
+		crc = crc_itu_t_byte(crc, *buffer++);
+	return crc;
 }
 
 extern void zzz();
@@ -108,18 +108,18 @@ uint16_t payload_crc()
 
 int crc7(uint8_t *buffer, int size)
 {
-    uint8_t crc = 0;
-    for (int i = 0; i < size; i++) {
-        uint8_t c = buffer[i];
-        for (int j = 0; j < 8; j++) {
-            crc <<= 1;
-            if ((crc ^ c) & 0x80)
-                crc ^= 9;
-            c <<= 1;
-        }
-        crc &= 0x7Fu;
-    }
-    return crc;
+	uint8_t crc = 0;
+	for (int i = 0; i < size; i++) {
+		uint8_t c = buffer[i];
+		for (int j = 0; j < 8; j++) {
+			crc <<= 1;
+			if ((crc ^ c) & 0x80)
+				crc ^= 9;
+			c <<= 1;
+		}
+		crc &= 0x7Fu;
+	}
+	return crc;
 }
 
 void __time_critical_func(cmd_write)(uint8_t cmd, uint32_t argument)
@@ -130,9 +130,9 @@ void __time_critical_func(cmd_write)(uint8_t cmd, uint32_t argument)
     pio_sm_set_out_pins(pio0, SM_OUT, PIN_CMD, 1);
     pio_sm_set_enabled(pio0, SM_OUT, true);
 
-    data[0] = cmd | 0x40;
-    *(uint32_t *) &data[1] = __builtin_bswap32(argument);
-    data[5] = (crc7(data, 5) << 1) | 1;
+	data[0] = cmd | 0x40;
+	*(uint32_t *) &data[1] = __builtin_bswap32(argument);
+	data[5] = (crc7(data, 5) << 1) | 1;
     uint32_t fifo[3];
     fifo[0] = 0xFFCF0000 | (data[0] << 8) | data[1];
     fifo[1] = __builtin_bswap32(*(uint32_t*)(data + 2));
@@ -151,7 +151,7 @@ bool __time_critical_func(dat_write)()
     pio_sm_set_out_pins(pio0, SM_OUT, PIN_DAT, 1);
     pio_sm_set_enabled(pio0, SM_OUT, true);
     uint8_t * buffer = data_buf;
-    uint16_t crc = crc_itu_t(0, buffer, 512);
+	uint16_t crc = crc_itu_t(0, buffer, 512);
     uint32_t words[130];
     int size_bits = 514 * 8 + 2;
     words[0] = ((size_bits ^ 0xFFFF) << 16) | (buffer[0] << 7) | (buffer[1] >> 1);
@@ -413,13 +413,13 @@ uint32_t mmc_init_table[] = {
 };
 
 bool mmc_initialize() {
-    if (!init_op_cond()) {
+	if (!init_op_cond()) {
         return false;
     }
     if (!cmd_exec_cid()) {
         return false;
     }
-    for (int i = 0; i < sizeof(mmc_init_table)/sizeof(mmc_init_table[0]); i += 4)
+	for (int i = 0; i < sizeof(mmc_init_table)/sizeof(mmc_init_table[0]); i += 4)
     {
         uint32_t res= 0;
         if (!simple_cmd_exec_with_ret(mmc_init_table[i], mmc_init_table[i+1], &res)) {
@@ -495,9 +495,9 @@ extern int boot_slot;
 uint8_t temp_buf[512];
 
 struct fw_header {
-    uint32_t size;
-    uint32_t crc;
-    uint8_t data[];
+	uint32_t size;
+	uint32_t crc;
+	uint8_t data[];
 };
 
 #define fw_slot_0 ((struct fw_header *) (XIP_BASE + 0x10000))
@@ -713,7 +713,7 @@ void prepare_mariko_bct()
  * drops writes to BctNormalMain (offset 0x0000) and BctSafeMain (offset 0x4000)
  * when it detects the modchip's custom public key fill pattern (0x59, 0x69...) in those
  * slots. this is by design for AutoRCM preservation, but it means that after a firmware
- * update via syscfw, UpdateBootImages successfully writes the new BCT to BctNormalSub (0x8000) and BctSafeSub (0xC000), 
+ * update via syscfw, UpdateBootImages successfully writes the new BCT to BctNormalSub (0x8000) and BctSafeSub (0xC000),
  * but the writes to BctNormalMain and BctSafeMain are discarded. the result is that Main slots still hold the modchip
  * synthetic/fake BCT while Sub slots have the new firmware's real BCT.
  *

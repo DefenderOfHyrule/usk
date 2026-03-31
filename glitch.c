@@ -65,8 +65,7 @@ void init_glitch_pio() {
 }
 
 void deinit_glitch_pio() {
-    // original code only disabled SM 0 and 1 (mask 0x3 = 0b011)
-    // SM 2 (G_DAT0_SM) is also used, so all 3 (mask 0x7 = 0b111) need to be disabled
+    // SM 2 (G_DAT0_SM) is also used, so all 3 state machines need to be disabled (0x7 = 0b111)
     pio_set_sm_mask_enabled(pio1, 0x7, false);
     for (int i = PIN_CLK; i <= PIN_DAT; i++)
     {
@@ -136,14 +135,14 @@ int do_glitch(int delay, int width, int total_ms, int after_ms) {
 
 int tries = 0;
 
-// Green pulsing implementation. 
+// Blue pulsing implementation. 
 void inc_tries()
 {
     tries += 1;
     if(tries & 1)
-        put_pixel(PIX_g);
+        put_pixel(PIX_b);
     else
-        put_pixel(PIX_gre);
+        put_pixel(PIX_blu);
 }
 
 // random() for glitch offset array generation
