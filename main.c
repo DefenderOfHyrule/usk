@@ -63,7 +63,9 @@ void self_test()
             cmd_ok |= safe_test_voltage(PIN_CMD, 1.8f, 0.2f);
         if (!d0_ok)
             d0_ok |= safe_test_voltage(PIN_DAT, 1.8f, 0.2f);
-        if (rst_ok && cmd_ok && d0_ok)
+        if (!clk_ok)
+            clk_ok |= safe_test_voltage(PIN_CLK, 1.8f, 0.2f);
+        if (rst_ok && cmd_ok && d0_ok && clk_ok)
             break;
     }
     if(!rst_ok)
@@ -77,6 +79,11 @@ void self_test()
     if(!d0_ok)
     {
         halt_with_error(2, 2);
+    }
+
+    if(!clk_ok)
+    {
+        halt_with_error(3, 2);
     }
 }
 
