@@ -544,8 +544,19 @@ bool update_firmware(uint32_t start_block, uint32_t size_blocks) {
     }
     return true;
 }
+struct fw_info
+{
+    uint32_t signature;
+    uint32_t fw_major;
+    uint32_t fw_minor;
+    uint32_t sdloader_hash;
+    uint32_t firmware_hash;
+    uint32_t fuse_count;
+    uint32_t bct_sub_fingerprint; // first 4 bytes of BctNormalSub
+};
 bool was_self_reset = false;
 extern int boot_try;
+bool check_and_resync_bct();
 bool fast_check() {
     start_mmc();
     reinit_mmc();
@@ -596,6 +607,26 @@ bool fast_check() {
         gpio_deinit(sda_pin());
         gpio_deinit(scl_pin());
     }
+    // check if a syscfw update has written a new BCT to BctNormalSub since the last
+    // write_payload(). write_descriptor() stores a fingerprint of BctNormalSub's
+    // pubkey at the time write_payload() ran. if this has changed, Atmosphere has dropped
+    // a Main write and Sub is now ahead, resync Sub> Main and trigger rewrite_payload().
+    // on every normal boot this reads two blocks and returns is_space_bl unchanged.
+    if (is_space_bl && cmd_mmc_read(0x1FFF)) {
+        struct fw_info * fwi = (struct fw_info *)data_buf;
+        if (fwi->signature == 0x9cabe959) {
+            uint32_t stored = fwi->bct_sub_fingerprint;
+            if (cmd_mmc_read(0x040)) {
+                uint32_t current = *(uint32_t *)(data_buf + 0x10);
+                if (stored != current) {
+                    // BctNormalSub has changed since last write_payload(), resync and rewrite
+                    check_and_resync_bct();
+                    stop_mmc();
+                    return false;
+                }
+            }
+        }
+    }
     stop_mmc();
     return is_space_bl;
 }
@@ -642,16 +673,6 @@ void copy_bct(int start, int end) {
     }
 }
 
-struct fw_info
-{
-    uint32_t signature;
-    uint32_t fw_major;
-    uint32_t fw_minor;
-    uint32_t sdloader_hash;
-    uint32_t firmware_hash;
-    uint32_t fuse_count;
-};
-
 extern bool do_burn_fuses;
 
 void write_descriptor()
@@ -668,6 +689,11 @@ void write_descriptor()
     fwi->fw_minor = VER_LO;
     fwi->sdloader_hash = payload_crc();
     fwi->firmware_hash = boot_slot ? fw_slot_1->crc : fw_slot_0->crc;
+    // store first 4 bytes of BctNormalSub pubkey
+    // so we can detect on next boot if a syscfw update has written a new BCT to Sub
+    fwi->bct_sub_fingerprint = 0;
+    if (cmd_mmc_read(0x040))
+        fwi->bct_sub_fingerprint = *(uint32_t *)(data_buf + 0x10);
     // write the info block
     write_data(desc_block, temp_buf, 512);
 }
@@ -745,21 +771,24 @@ static bool bct_block_has_modchip_magic(int bct_start_block) {
     return magic == (mariko ? 0xA56CA203 : 0x69696969);
 }
 
-void check_and_resync_bct() {
+bool check_and_resync_bct() {
     // only relevant on a configured boot where space_bl magic is already present,
     // meaning write_payload has previously run and wrote the synthetic/fake BCT.
     // if the chip is not yet configured there is nothing to resync.
     if (!is_space_bl)
-        return;
+        return false;
 
     // check Normal BCT pair; Main has magic, Sub does not > Sub has a newer Nintendo BCT
     bool normal_main_magic = bct_block_has_modchip_magic(0x000);
     bool normal_sub_magic  = bct_block_has_modchip_magic(0x040);
 
+    bool resynced = false;
+
     if (normal_main_magic && !normal_sub_magic) {
         // BctNormalSub was updated by a firmware update but BctNormalMain write was
         // dropped by Atmosphere. copy Sub > Main to resync.
         copy_bct(0x040, 0x000);
+        resynced = true;
     }
 
     // check Safe BCT pair; uses same logic
@@ -768,7 +797,10 @@ void check_and_resync_bct() {
 
     if (safe_main_magic && !safe_sub_magic) {
         copy_bct(0x060, 0x020);
+        resynced = true;
     }
+
+    return resynced;
 }
 
 void write_payload() {
