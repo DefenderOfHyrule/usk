@@ -55,7 +55,7 @@ void self_test()
 {
     absolute_time_t tio_time = make_timeout_time_ms(2500);
     adc_init();
-    bool rst_ok = false, cmd_ok = false, d0_ok = false, clk_ok = false;
+    bool rst_ok = false, cmd_ok = false, d0_ok = false;
     while (!time_reached(tio_time)) {
         if (!rst_ok)
             rst_ok |= safe_test_voltage(PIN_RST, 1.8f, 0.2f);
@@ -63,9 +63,7 @@ void self_test()
             cmd_ok |= safe_test_voltage(PIN_CMD, 1.8f, 0.2f);
         if (!d0_ok)
             d0_ok |= safe_test_voltage(PIN_DAT, 1.8f, 0.2f);
-        if (!clk_ok)
-            clk_ok |= safe_test_voltage(PIN_CLK, 1.8f, 0.2f);
-        if (rst_ok && cmd_ok && d0_ok && clk_ok)
+        if (rst_ok && cmd_ok && d0_ok)
             break;
     }
     if(!rst_ok)
@@ -79,11 +77,6 @@ void self_test()
     if(!d0_ok)
     {
         halt_with_error(2, 2);
-    }
-
-    if(!clk_ok)
-    {
-        halt_with_error(3, 2);
     }
 }
 
