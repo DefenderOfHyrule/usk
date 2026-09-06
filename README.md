@@ -1,3 +1,6 @@
+# Archival notice
+This repository is now archived. I will no longer be working on this project due to the lack of time and lack of interest in continuing development for this project. I'd recommend switching back to rehius' usk firmware for the time being.
+
 # μsk (Picofly firmware)
 
 μsk is an open source firmware for Switch voltage glitching-based modchips. μsk runs on dev (and custom) boards containing the Raspberry Pi RP2040 microcontroller.
